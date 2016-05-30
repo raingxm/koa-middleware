@@ -17,6 +17,9 @@ app.use(function *() {
 			this.session.userName = 'zhangxu';
 			this.body = this.session.userName;
 			break;
+		case '/getname':
+			this.body = this.session.userName;
+			break;
 	}
 });
 
@@ -36,4 +39,22 @@ describe('Testing rethink DB middleware', function() {
 				.end();
 		});
 	});
+
+	describe('Retrieve session value', function() {
+		var agent;
+		before(function *() {
+			agent = request.agent(server);
+			yield agent
+				.get('/setname')
+				.expect(200)
+				.end();
+		});
+
+		it('should find the userName in session', function *() {
+			 yield agent
+			 	.get('/getname')
+			 	.expect('zhangxu')
+			 	.end();
+		});
+	})
 });
