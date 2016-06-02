@@ -31,5 +31,9 @@ module.exports = function(option) {
         store[token] = this.session;
       }
     }
+    
+    if(!this.session) {
+      delete store[token];
+    }
   }
 };

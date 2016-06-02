@@ -20,6 +20,9 @@ app.use(function *() {
 		case '/getname':
 			this.body = this.session.userName;
 			break;
+    case '/clear':
+      this.session = null;
+      this.status = 204;
 	}
 });
 
@@ -56,5 +59,31 @@ describe('Testing rethink DB middleware', function() {
 			 	.expect('zhangxu')
 			 	.end();
 		});
-	})
+	});
+
+  describe('Destory Session', function () {
+    var agent;
+    before(function *() {
+      agent = request.agent(server);
+      yield agent
+        .get('/setname')
+        .expect(200)
+        .end();
+    });
+
+    it('Should not find session userName', function *() {
+      yield agent
+        .get('/getname')
+        .expect('zhangxu')
+        .end();
+      yield agent
+        .get('/clear')
+        .expect(204)
+        .end();
+      yield agent
+        .get('/getname')
+        .expect('')
+        .end();
+    })
+  });
 });
