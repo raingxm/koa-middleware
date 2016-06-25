@@ -1,5 +1,6 @@
 var _ = require('lodash'),
-  uid = require('uid-safe');
+  uid = require('uid-safe'),
+  model = require('./sessionmodel');
 
 module.exports = function(option) {
   var store = {};
@@ -11,11 +12,13 @@ module.exports = function(option) {
     signed: true,
     maxAge: 24 * 60 * 60 * 1000
   };
+  var isMigrated = false;
 
   function *loadSession(ctx) {
     var token = ctx.cookies.get(cookieName);
-    if(token && _.has(store, token)) {
-      ctx.session = store[token];
+    if(token) {
+      // ctx.session = store[token];
+      ctx.session = yield model.findByToken(token);
     }
 
     if(!ctx.session) {
@@ -26,24 +29,36 @@ module.exports = function(option) {
   }
 
   function *saveSession(ctx, token) {
+    var isNew = false;
     if(!token) {
-      token = uid(24);
+      isNew = true;
+      token = yield uid(24);
       ctx.cookies.set(cookieName, token, cookieOption);
       if(ctx.session) {
-        store[token] = ctx.session;
+        // store[token] = ctx.session;
+        if (isNew) {
+          yield model.add(token, ctx.session)
+        } else {
+          yield model.update(token, ctx.session)
+        }
       }
     }
 
     if(!ctx.session) {
-      delete store[token];
+      // delete store[token];
+      yield model.remove(token);
     }
   }
 
   return function *session(next) {
+    if (!isMigrated) {
+      yield model.tryMigrate();
+      isMigrated = true;
+    }
     var token = yield loadSession(this);
 
     yield next;
 
-    yield saveSession(this);
+    yield saveSession(this, token);
   }
 };

@@ -8,6 +8,7 @@
   },
   "devDependencies": {
     "lodash": "^4.13.1",
+    "rethinkdbdash": "^2.3.9",
     "uid-safe": "^2.1.1"
   }
 }
