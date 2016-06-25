@@ -77,7 +77,7 @@ describe('Testing rethink DB middleware', function() {
         .expect('zhangxu')
         .end();
       yield agent
-        .get('/clear')
+        .del('/clear')
         .expect(204)
         .end();
       yield agent

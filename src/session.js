@@ -12,28 +12,38 @@ module.exports = function(option) {
     maxAge: 24 * 60 * 60 * 1000
   };
 
-  return function *session(next) {
-    var token = this.cookies.get(cookieName);
+  function *loadSession(ctx) {
+    var token = ctx.cookies.get(cookieName);
     if(token && _.has(store, token)) {
-      this.session = store[token];
+      ctx.session = store[token];
     }
 
-    if(!this.session) {
-      this.session = {};  
+    if(!ctx.session) {
+      ctx.session = {};
     }
-    
-    yield next;
 
+    return token;
+  }
+
+  function *saveSession(ctx, token) {
     if(!token) {
       token = uid(24);
-      this.cookies.set(cookieName, token, cookieOption);
-      if(this.session) {
-        store[token] = this.session;
+      ctx.cookies.set(cookieName, token, cookieOption);
+      if(ctx.session) {
+        store[token] = ctx.session;
       }
     }
-    
-    if(!this.session) {
+
+    if(!ctx.session) {
       delete store[token];
     }
+  }
+
+  return function *session(next) {
+    var token = yield loadSession(this);
+
+    yield next;
+
+    yield saveSession(this);
   }
 };
